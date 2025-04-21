@@ -272,12 +272,13 @@ check_nginx_up
 
         sudo nano /opt/prometheus_scripts/prometheus_size.sh
 
-        #!/bin/bash
-        OUTPUT_FILE="/var/lib/node_exporter/prometheus_size.prom"
-        PROMETHEUS_DIR="/var/lib/prometheus"
-        SIZE=$(du -sb "$PROMETHEUS_DIR" | awk '{print $1}')
-        echo "prometheus_dir_size_bytes $SIZE" > "$OUTPUT_FILE"
- 
+```
+#!/bin/bash
+OUTPUT_FILE="/var/lib/node_exporter/prometheus_size.prom"
+PROMETHEUS_DIR="/var/lib/prometheus"
+SIZE=$(du -sb "$PROMETHEUS_DIR" | awk '{print $1}')
+echo "prometheus_dir_size_bytes $SIZE" > "$OUTPUT_FILE"
+ ```
  
         sudo chmod +x /opt/prometheus_scripts/prometheus_size.sh
 

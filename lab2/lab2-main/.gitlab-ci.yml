@@ -1,0 +1,65 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  STATIC_DIR: "static"
+  MESSAGE_FILE: "message.txt"
+  NGINX_CONF: "nginx.conf"
+  REMOTE_USER: "gitlab-runner"
+  REMOTE_HOST: "172.16.0.1"
+  REMOTE_NGINX_CONF: "/etc/nginx/nginx.conf"
+  NGINX_EXTRA_DIR: "/home/gitlab-runner/nginx_extra"
+
+before_script:
+  - export SSH_TARGET="$REMOTE_USER@$REMOTE_HOST"
+  - export LOCAL_STATIC_PATH="./$STATIC_DIR"
+  - export LOCAL_NGINX_CONF="./$NGINX_CONF"
+  - export REMOTE_STATIC_PATH="/home/$REMOTE_USER/$STATIC_DIR"
+  - export REMOTE_NGINX_PATH="/home/$REMOTE_USER/$NGINX_CONF"
+
+build_static:
+  stage: build
+  image: python:3.11
+  script:
+    - COMMIT_TIME=$(git log -1 --pretty=format:"%ad" --date=format:"%Y-%m-%d %H:%M:%S" $CI_COMMIT_SHA)
+    - python3 generate_static.py "$CI_COMMIT_SHORT_SHA" "$COMMIT_TIME"
+    - |
+      echo "server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+          root /home/$REMOTE_USER/$STATIC_DIR;
+          index index.html;
+        }
+      }" > "$NGINX_CONF"
+  artifacts:
+    paths:
+      - $STATIC_DIR/
+      - $NGINX_CONF
+    expire_in: 1 hour
+  only:
+    - branches
+
+test_nginx_config:
+  stage: test
+  script:
+    - ssh $SSH_TARGET "mkdir -p $REMOTE_STATIC_PATH $NGINX_EXTRA_DIR /home/$REMOTE_USER/deploy"
+    - scp -r $LOCAL_STATIC_PATH/* $SSH_TARGET:$REMOTE_STATIC_PATH/
+    - scp $LOCAL_NGINX_CONF $SSH_TARGET:$REMOTE_NGINX_PATH
+    - ssh $SSH_TARGET "sudo ln -sf $REMOTE_NGINX_PATH /etc/nginx/sites-available/static.conf"
+    - ssh $SSH_TARGET "sudo ln -sf /etc/nginx/sites-available/static.conf /etc/nginx/sites-enabled/static.conf"
+    - ssh $SSH_TARGET "sudo nginx -t -c $REMOTE_NGINX_CONF"
+  only:
+    - branches
+
+deploy:
+  stage: deploy
+  script:
+    - ssh $SSH_TARGET "sudo systemctl reload nginx"
+  when: manual
+  only:
+    - main
+    - develop
