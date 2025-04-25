@@ -240,17 +240,19 @@ ss`
 ------------ ИЛИ --------------
 
 🔧 Роль custom_nginx
-roles/custom_nginx/defaults/main.yml
-yaml
-Копировать
-Редактировать
+
+
+`roles/custom_nginx/defaults/main.yml`
+
+```
 nginx_root: /var/www/html
 nginx_index: index.html
 nginx_port: 80
-roles/custom_nginx/tasks/main.yml
-yaml
-Копировать
-Редактировать
+```
+
+`roles/custom_nginx/tasks/main.yml`
+
+```
 - name: Установка Nginx
   apt:
     name: nginx
@@ -283,12 +285,14 @@ yaml
     name: nginx
     state: started
     enabled: true
+```
+
 🔧 Роль custom_postgresql
-roles/custom_postgresql/defaults/main.yml
-yaml
-Копировать
-Редактировать
-postgresql_version: 14
+
+`roles/custom_postgresql/defaults/main.yml`
+
+```
+postgresql_version: 16
 
 postgresql_packages:
   - "postgresql-{{ postgresql_version }}"
@@ -306,10 +310,11 @@ postgresql_databases:
     encoding: UTF-8
     lc_collate: en_US.UTF-8
     lc_ctype: en_US.UTF-8
-roles/custom_postgresql/tasks/main.yml
-yaml
-Копировать
-Редактировать
+```
+
+`roles/custom_postgresql/tasks/main.yml`
+
+```
 - name: Установка PostgreSQL
   apt:
     name: "{{ postgresql_packages }}"
@@ -330,28 +335,33 @@ yaml
     lc_collate: "{{ item.lc_collate }}"
     lc_ctype: "{{ item.lc_ctype }}"
   loop: "{{ postgresql_databases }}"
+```
+
 ▶️ Плейбуки
-playbooks/install_nginx.yml
-yaml
-Копировать
-Редактировать
+
+`nano playbooks/install_nginx.yml`
+
+```
 - name: Установка и настройка Nginx
   hosts: web
   become: true
   roles:
     - custom_nginx
-playbooks/install_postgresql.yml
-yaml
-Копировать
-Редактировать
+```
+
+`playbooks/install_postgresql.yml`
+
+```
 - name: Установка и настройка PostgreSQL
   hosts: db
   become: true
   roles:
     - custom_postgresql
+```
+
 🧪 Запуск
-bash
-Копировать
-Редактировать
-ansible-playbook -i inventory.ini playbooks/install_nginx.yml
-ansible-playbook -i inventory.ini playbooks/install_postgresql.yml
+
+```
+ansible-playbook playbooks/install_nginx.yml
+ansible-playbook playbooks/install_postgresql.yml
+```
